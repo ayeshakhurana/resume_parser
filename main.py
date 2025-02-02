@@ -3,6 +3,7 @@ import spacy
 import nltk
 spacy.load('en_core_web_sm')
 nltk.download('stopwords')
+import importlib_metadata
 
 import pandas as pd
 import base64, random
@@ -21,11 +22,10 @@ import io, random
 from streamlit_tags import st_tags
 from PIL import Image
 import pymysql
-from resume_parser.courses import ds_course, web_course, android_course, ios_course, uiux_course, resume_videos, interview_videos
+from courses import ds_course, web_course, android_course, ios_course, uiux_course, resume_videos, interview_videos
 import plotly.express as px
 import youtube_dl
 import yt_dlp
-
 
 connection = pymysql.connect(host='localhost', user='root', password='ayesha',db='sra')
 cursor = connection.cursor()
@@ -102,10 +102,10 @@ def show_pdf(file_path):
     st.markdown(pdf_display, unsafe_allow_html=True)
 
 def run():
-    st.title("AI BASED RESUME ANALYSER")
+    st.title("RESUME ANALYSER")
     st.image('image.png', width=700)
     st.sidebar.markdown("# Choose User")
-    activities = ["User", "Admin"]
+    activities = ["User", "Admin","AI Arena"]
     choice = st.sidebar.selectbox("Choose among the given options:", activities)
     
     connection = pymysql.connect(host='localhost', user='root', password='ayesha', db='sra')
@@ -144,9 +144,9 @@ def run():
 
             resumedata = ResumeParser(image_path).get_extracted_data()
             if resumedata:
-                resumedata_text = pdf_reader(image_path)             
+                resumedata_text = pdf_reader(image_path)
+                st.header("Greetings! ")             
                 st.header("Resume Details")
-                st.success("Greetings ")
                 st.subheader("Details:- ")
                 
                 try:
@@ -211,12 +211,6 @@ def run():
                         rskills = ['Adobe XD', 'Figma', 'Sketch', 'InVision', 'Zeplin', 'Balsamiq', 'Wireframes', 'Prototyping', 'User Research', 'User Testing', 'User Flows', 'Adobe Illustrator', 'Adobe Photoshop', 'UI Design', 'UX Design', 'Interaction Design', 'Visual Design', 'Design Thinking', 'User-Centered Design', 'Responsive Design']
                         rcourses = courserecommender(uiux_course)
                         break
-                    else:
-                        rfield = 'General'
-                        st.success('Since you have general skills, we recommend you to take the following courses to enhance your skills: ')
-                        rskills = ['HTML', 'CSS', 'JavaScript', 'React.js', 'Vue.js', 'Angular', 'Node.js', 'Express.js', 'Django', 'Flask', 'Bootstrap', 'Tailwind CSS', 'SASS', 'Redux', 'Vuex', 'REST API', 'GraphQL', 'MySQL', 'MongoDB', 'PostgreSQL', 'Git', 'GitHub', 'Netlify', 'Vercel', 'Docker']
-                        rcourses = courserecommender(ds_course)
-                        break
                 
                 ts = time.time()
                 curtime = datetime.datetime.fromtimestamp(ts).strftime('%D-%m-%Y')
@@ -225,42 +219,55 @@ def run():
 
                 st.subheader('Here\'s your resume score: ')
                 score = 0
-                if 'Objective' in resumedata_text:
-                    score += 20
-                    st.write('[:)] Great that you added Objectives in your resume.')
+                if 'Education'  in resumedata_text:
+                    score += 10
+                    st.write('1.Great that you added Education in your resume.')
                 else:
-                    st.write('[:(] What\'s your objective for this role? Go ahead and consider adding that in your resume.')
+                    st.write('1. What\'s your education for this role? Go ahead and consider adding that in your resume.')
+                if 'Objectives' or 'Goals' in resumedata_text:
+                    score+=10
+                    st.write('2. Great that you added Objectives in your resume.')
+                else:
+                    st.write('2. What\'s your objective for this role? Go ahead and consider adding that in your resume.')
                 
-                if 'Experience' in resumedata_text:
+                if 'Experience' or 'Work Experience'  in resumedata_text:
                     score += 20
-                    st.write('[ :) ] Great that you added Experience in your resume.')
+                    st.write('3. Great that you added Experience in your resume.')
                 else:
-                    st.write('[ :( ] You should really gain some experiences in your field.')
+                    st.write('3. You should really gain some experiences in your field.')
                 
                 if 'Hobbies' or 'Interests' in resumedata_text:
-                    score += 20
-                    st.write('[ :) ] Great that you added Hobbies/Interests in your resume.') 
+                    score += 10
+                    st.write('4. Great that you added Hobbies/Interests in your resume.') 
                 else:
-                    st.write('[ :( ] Don\'t you have any hobbies or interests? Go ahead and consider adding that in your resume.')
+                    st.write('4. Don\'t you have any hobbies or interests? Go ahead and consider adding that in your resume.')
+                if 'Skills' or 'SKILLS' in resumedata_text:
+                    if(len(resumedata['skills']) > 15):
+                        score+=5
+                    else:
+                        score+=10
+                    st.write('5. Great that you added skills in your resume')
+                else:
+                    st.write('5.Consider adding some skills in your resume')
                 
                 if 'Projects' in resumedata_text:
                     score += 20
-                    st.write('[ :) ] Great that you added Projects in your resume.')
+                    st.write('6. Great that you added Projects in your resume.')
                 else:
-                    st.write('[ :( ] Show your skills through projects and enhance your showcase.')
+                    st.write('6. Show your skills through projects and enhance your showcase.')
 
                 if 'Achievements' in resumedata_text:
-                    score += 20
-                    st.write('[ :) ] Great that you added Achievements in your resume.')
+                    score +=20
+                    st.write('7. Great that you added Achievements in your resume.')
                 else:
-                    st.write('[ :( ] Go out Achieve something and add that in your resume.')
+                    st.write('7. Go out Achieve something and add that in your resume.')
                 
                 st.markdown("""<style>.stProgress > div > div > div > div { background-color: #d73b5c;}</style>""", unsafe_allow_html=True)
                 bar = st.progress(0)
                 for i in range(score):
                     bar.progress(i + 1)
                     time.sleep(0.1)
-                st.success(f"Your resume score is: {score}%")
+                st.success(f"Your resume score is: {score}")
                 st.write(f"Your resume is {level} level resume.")
 
                 insert_data(resumedata['name'], resumedata['email'], score, timestamp, resumedata['no_of_pages'], level, keywords, rskills, rcourses)
