@@ -105,7 +105,7 @@ def run():
     st.title("RESUME ANALYSER")
     st.image('image.png', width=700)
     st.sidebar.markdown("# Choose User")
-    activities = ["User", "Admin","AI Arena"]
+    activities = ["User", "Admin"]
     choice = st.sidebar.selectbox("Choose among the given options:", activities)
     
     connection = pymysql.connect(host='localhost', user='root', password='ayesha', db='sra')
